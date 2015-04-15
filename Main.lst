@@ -1,0 +1,253 @@
+GNAT GPL 2011 (20110428)
+Copyright 1992-2011, Free Software Foundation, Inc.
+
+Compiling: C:\Users\Lilly_94\Desktop\Lab5\src\main.adb (source file time stamp: 2015-03-21 10:22:48)
+
+     1.
+     2. -----------------------------------------------
+     3. -- Laboratory work # 1: Ada semaphores---------
+     4. -- Task: A = (B*(MO+MK))*(MO*MK)---------------
+     5. -- Author: Lyubarska L.V., group IO-21---------
+     6. -- Last modified date: 03.02.2015--------------
+     7. -----------------------------------------------
+     8. with  Ada.Text_IO, Ada.Integer_Text_IO, Ada.Synchronous_Task_Control,Ada.Strings.Unbounded;
+     9. use Ada.Text_IO, Ada.Integer_Text_IO, Ada.Synchronous_Task_Control,Ada.Strings.unbounded;
+    10. procedure Main is
+    11.    -- Vectors size
+    12.    N: positive :=8 ;
+    13.   -- Processors count
+    14.    P: positive := 8;
+    15.    -- Part
+    16.    H: positive := N/P;
+    17.    ---Types
+    18.    type Vector is array (1..N) of integer;
+    19.    type Matrix is array (1..N) of Vector;
+    20.    --------------------Data
+    21.    E,K:Vector;
+    22.    MC,MO,MA,MZ:Matrix;
+    23.    procedure Output1(VA: in Vector) is
+    24.    begin
+    25.       	if (N<10) then
+    26. 	    put("| ");
+    27.   	    for i in 1..N loop
+    28. 	       put(VA(i));
+    29. 	       put(" ");
+    30. 	    end loop;
+    31. 	    put("|");
+    32.          New_Line;
+    33.          end if;
+    34.    end Output1;
+    35.    ------------Input for vectors---------------
+    36.     procedure Input1 (VA: out Vector) is
+    37.        begin
+    38. 	  for i in 1..N loop
+    39.              VA(i) := 1;
+    40.        end loop;
+    41.    end Input1;
+    42.  --------------Input for matrix-------------------------
+    43.    procedure Input2(MA: out Matrix) is
+    44.       begin
+    45. 	 for i in 1..N loop
+    46. 	    for j in 1..N loop
+    47. 		MA(i)(j) := 1;
+    48. 	    end loop;
+    49. 	 end loop;
+    50.    end Input2;
+    51.    procedure Output2(MA: in Matrix) is
+    52.       begin
+    53. 	 for i in 1..N loop
+    54. 	    for j in 1..N loop
+    55. 		Put(MA(i)(j));
+    56.             end loop;
+    57.             New_Line;
+    58. 	 end loop;
+    59.    end Output2;
+    60.    ----------count ai
+    61.    function countAi(h1,h2:integer) return integer is
+    62.    a:integer:=0;
+    63.    begin
+    64.       for i in h1+1..h2 loop
+    65.         a:=a+E(i)*K(i);
+    66.       end loop;
+    67.       return a;
+    68.    end countAi;
+    69.    ----------T1------------------------------------------
+    70.    procedure Start is
+    71.       protected Monitor is
+    72. 	entry WaitInput;
+    73.         entry WaitCalc1;
+    74.         entry WaitCalcMA;
+    75. 	procedure InputSignal;
+    76.         procedure CalcSignal1;
+    77.         procedure CalcSignalMA;
+    78.         procedure SetMB;
+    79.         procedure SetAlfa;
+    80.         function CopyMB return Matrix;
+    81.         function CopyA return integer;
+    82.         function CopyAlfa return integer;
+    83. 	procedure CountA(ai: in integer);
+    84.         private
+    85. 	FIn: integer:=0;
+    86.         FC: integer:=0;
+    87.         FMA: integer:=0;
+    88.         MB,MZ:Matrix;
+    89.         a:integer:=0;
+    90.         alfa:integer:=0;
+    91.
+    92.
+    93. 	end Monitor;
+    94.       protected body Monitor is
+    95.
+    96.                -----Wait input
+    97. 	       entry WaitInput when FIn = 3 is
+    98. 	       begin
+    99. 	         null;
+   100.                end WaitInput;
+   101.                -----Wait for calc a
+   102. 	       entry WaitCalc1 when FC = 8 is
+   103.                begin
+   104.                   null;
+   105.                end WaitCalc1;
+   106.                ----wait for calc MA
+   107.                entry WaitCalcMA when FMA = 7 is
+   108.                begin
+   109.                   null;
+   110. 	       end WaitCalcMA;
+   111.                -----input signal
+   112. 		procedure InputSignal is
+   113. 		begin
+   114. 		    FIn:=FIn+1;
+   115. 		end InputSignal;
+   116.                 ----end of calculating a
+   117. 		procedure CalcSignal1 is
+   118. 		begin
+   119. 		    FC := FC + 1;
+   120. 		end CalcSignal1;
+   121.                 ----end of calculating MA
+   122.                 procedure CalcSignalMA is
+   123. 		begin
+   124. 		    FMA:=FMA+1;
+   125.                 end CalcSignalMA;
+   126.                 ----set values of MB and alfa
+   127. 		procedure SetMB is
+   128. 		begin
+   129. 		   Input2(MB);
+   130.                 end SetMB;
+   131.                 procedure SetAlfa is
+   132. 		begin
+   133. 		   alfa:=1;
+   134.                 end SetAlfa;
+   135.                 -----copy procedure
+   136. 		function CopyMB return Matrix is
+   137. 		begin
+   138. 	           return MB;
+   139.                 end CopyMB;
+   140.
+   141.                 function CopyA return integer is
+   142. 		begin
+   143. 	           return a;
+   144.                 end CopyA;
+   145.
+   146.                 function CopyAlfa return integer is
+   147. 		begin
+   148. 	           return alfa;
+   149.                 end CopyAlfa;
+   150.                 -----count a=E*K
+   151. 		procedure CountA(ai: in integer) is
+   152. 		begin
+   153. 		   a:=a+ai;
+   154. 		end CountA;
+   155. 	end Monitor;
+   156.       task type Thread(number:integer);
+   157.       task body Thread is
+   158.          Temp_Unbounded_String,Temp_Unbounded_String1 : Unbounded_String;
+   159.          tid:integer;
+   160.          ai,ax,alfai:integer:=0;
+   161.          MBi:Matrix;
+   162.          s:String:=Integer'Image(number);
+   163.          begin
+   164.          tid:=number;
+   165.          Append(Temp_Unbounded_String, "T");
+   166.          Append(Temp_Unbounded_String, s);
+   167.          Append(Temp_Unbounded_String, " started");
+   168.          Put_Line(To_String(Temp_Unbounded_String));
+   169.
+   170.          if tid=1 then
+   171.            Monitor.SetMB;
+   172.            Monitor.InputSignal;
+   173.          end if;
+   174.          if tid=2 then
+   175.            Input2(MC);
+   176.            Input1(K);
+   177.          Monitor.InputSignal;
+   178.          end if;
+   179.          if tid=8 then
+   180.            Input2(MO);
+   181.            Monitor.SetAlfa;
+   182.            Input1(E);
+   183.            Monitor.InputSignal;
+   184.          end if;
+   185.
+   186.          Monitor.WaitInput;
+   187.
+   188.         for i in (tid-1)*H+1..tid*H loop
+   189.             ax:=E(i)*K(i);
+   190.          end loop;
+   191.
+   192.         Monitor.CountA(ax);
+   193.
+   194.         Monitor.CalcSignal1;
+   195.
+   196.          Monitor.WaitCalc1;
+   197.
+   198.         MBi:=Monitor.CopyMB;
+   199.         alfai:=Monitor.CopyAlfa;
+   200.          ai:=Monitor.CopyA;
+   201.
+   202.          for j in (tid-1)*H+1..tid*H loop
+   203. 	     for i in 1..N loop
+   204. 		MZ(i)(j) := 0;
+   205. 		    for m in 1..N loop
+   206.                   MZ(i)(j) := MZ(i)(j) + MBi(i)(m)*MC(m)(j)*alfai;
+   207.                 end loop;
+   208. 	     end loop;
+   209.          end loop;
+   210.          for j in (tid-1)*H+1..tid*H loop
+   211. 	     for i in 1..N loop
+   212.                MA(i)(j):=MZ(i)(j)+MO(i)(j)*ai;
+   213. 	     end loop;
+   214.         end loop;
+   215.          if tid/=1 then
+   216.
+   217.             Monitor.CalcSignalMA;
+   218.         end if;
+   219.          if tid=1 then
+   220.
+   221.             Monitor.WaitCalcMA;
+   222.
+   223.             Output2(MA);
+   224.         end if;
+   225.         Append(Temp_Unbounded_String1, "T");
+   226.         Append(Temp_Unbounded_String1,s);
+   227.         Append(Temp_Unbounded_String1, " ended");
+   228.         Put_Line(To_String(Temp_Unbounded_String1));
+   229.       end Thread;
+   230.       A:Thread(1);
+   231.       B:Thread(2);
+   232.       C:Thread(3);
+   233.       D:Thread(4);
+   234.       E:Thread(5);
+   235.       F:Thread(6);
+   236.       G:Thread(7);
+   237.       I:Thread(8);
+   238.    begin
+   239.       null;
+   240.    end Start;
+   241. begin
+   242.    Put_Line("Main started");
+   243.    Start;
+   244.    Put_Line("Main ended");
+   245.    null;
+   246. end Main;
+
+ 246 lines: No errors
